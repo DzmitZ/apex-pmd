@@ -29,10 +29,23 @@ class ApexPMD {
         this.attList = attList;
         this.attRuls = attRuls;
         this.branchId = branchId;
-        this.connSourceOrg = new jsforce.Connection({
-            serverUrl: this.instUrl,
-            sessionId: this.accessToken
-        });
+        if (process.env.sf_token){
+            const token = process.env.sf_token.split(' ');
+            this.connSourceOrg = new jsforce.Connection({
+                oauth2 : {
+                    loginUrl: this.instUrl,
+                    clientId : token[1],
+                    clientSecret : token[2]
+                },
+                instanceUrl : this.instUrl,
+                refreshToken : token[0]
+            });
+        } else {
+            this.connSourceOrg = new jsforce.Connection({
+                serverUrl: this.instUrl,
+                sessionId: this.accessToken
+            });
+        }
         this.jobId = jobId;
         this.mapRuls = [];
         this.violList = [];
