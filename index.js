@@ -43,11 +43,7 @@ app.post('/apexPMD',authCheck, (req, res) => {
       } else {
         console.log('access token null');
       }
-    }
-      getAuthDetails();
-    let init = new ApexPMD(data.backUrl, data.sId, data.jobId, data.attList, data.attRuls, data.branchId);
-
-    const control = async _ => {
+      let init = new ApexPMD(data.backUrl, data.sId, data.jobId, data.attList, data.attRuls, data.branchId);
       console.log('Start')
       while (init.isContinue) {
         const getAtt = await init.getAttachment();
@@ -63,8 +59,9 @@ app.post('/apexPMD',authCheck, (req, res) => {
         const clean = await init.cleanFolder();
         console.log(clean);
       }
-    };
-    control();
+    }
+    getAuthDetails();
+    
     res.send({isSuccess: true, opStatus: 'INPROGRESS'});
   } catch (error) {
     console.log(error);
