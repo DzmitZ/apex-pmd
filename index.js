@@ -3,6 +3,7 @@ const ApexPMD = require('./ApexPMD');
 const express = require('express');
 const bodyParser = require("body-parser");
 const app = express();
+const axios =  require('axios');
 const port = process.env.PORT || 5000;
 
 app.use(bodyParser.json({limit: '50mb'}));
@@ -10,9 +11,40 @@ app.listen(port, () => console.log(`Port: ${port}`));
 app.post('/apexPMD',authCheck, (req, res) => {
   try {
     let data = req.body;
-    let init = new ApexPMD(data.backUrl, data.sId, data.jobId, data.attList, data.attRuls, data.branchId);
-
-    const control = async _ => {
+    const getAuthDetails = async _ => {
+      console.log('get access token:');
+      const token = process.env.sf_token.split(' ');
+      const response  = await axios.post(data.backUrl+'/services/oauth2/token', null, {
+        params: {
+            grant_type: 'refresh_token',
+            refresh_token: token[0],
+            client_id: token[1],
+            client_secret: token[2],
+        },
+      });
+      console.log(response.status);
+      console.log(response.statusText);
+      if (response.data?.access_token!=null){
+        console.log('send request');
+        const request = axios.create();
+        request.interceptors.request.use((config) => {
+          config.headers.accept = 'application/json';
+          config.headers.authorization = 'Bearer '+response.data.access_token;
+          config.baseURL = response.data.instance_url;
+          config.maxBodyLength = 104857600;
+          config.maxContentLength = 104857600;
+          return config;
+        });
+        const result = await request.post('/services/apexrest/Flosum/async', {
+            attachment: JSON.stringify(data.attList),
+            opType: 'ATTACHMENT',
+        });
+        console.log(result.status);
+        console.log(result.statusText);
+      } else {
+        console.log('access token null');
+      }
+      let init = new ApexPMD(data.backUrl, data.sId, data.jobId, data.attList, data.attRuls, data.branchId);
       console.log('Start')
       while (init.isContinue) {
         const getAtt = await init.getAttachment();
@@ -28,8 +60,9 @@ app.post('/apexPMD',authCheck, (req, res) => {
         const clean = await init.cleanFolder();
         console.log(clean);
       }
-    };
-    control();
+    }
+    getAuthDetails();
+    
     res.send({isSuccess: true, opStatus: 'INPROGRESS'});
   } catch (error) {
     console.log(error);
@@ -57,7 +90,7 @@ app.get('/oauth/token', authCheck, (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('Ok. Ver:3.0.0. Ver.PMD: 7.0.0');
+  res.send('Ok. Ver:3.0.0-test1. Ver.PMD: 7.0.0');
 });
 
 function authCheck (req, res, next) {
