@@ -9,8 +9,7 @@
     "http": "0.0.0",
     "jsforce": "^1.11.0",
     "request": "^2.88.0",
-    "dotenv": "10.0.0",
-    "axios": "^1.6.7"
+    "dotenv": "10.0.0"
   },
   "overrides": {
     "jsforce": {
